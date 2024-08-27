@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket File Download</title>
+</head>
+<body>
+    <h1>WebSocket File Download</h1>
+    <button onclick="downloadFile()">Download File</button>
+    <script>
+        async function downloadFile() {
+            const socket = new WebSocket('ws://localhost:8765');
+            let fileData = [];
+
+            socket.onmessage = function(event) {
+                fileData.push(event.data);
+            };
+
+            socket.onclose = function() {
+                const blob = new Blob(fileData);
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'downloaded-file';
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+
+            socket.onerror = function(error) {
+                console.error('WebSocket Error: ', error);
+            };
+        }
+    </script>
+</body>
+</html>
