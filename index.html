@@ -7,16 +7,34 @@
 </head>
 <body>
     <h1>QR Share</h1>
-    <button onclick="html5QrCode.start({ facingMode: 'environment' }, { fps: 10, qrbox: 250 }, onScanSuccess, onScanError)">スキャン&ダウンロード</button>
+    <button onclick="startScanner()">スキャン&ダウンロード</button>
     <canvas id="qrcodeCanvas"></canvas>
     <input type="file" id="fileInput">
     <button onclick="generateQRCode()">共有</button>
     <button id="downloadButton">ダウンロード</button>
 
+    <!-- QRコードライブラリの読み込み -->
     <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
     <script>
-        // QRコード生成関数
+        function startScanner() {
+            const html5QrCode = new Html5Qrcode("qrcodeCanvas");
+            html5QrCode.start({ facingMode: 'environment' }, { fps: 10, qrbox: 250 }, onScanSuccess, onScanError);
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            document.getElementById("downloadButton").addEventListener("click", function() {
+                const link = document.createElement("a");
+                link.href = decodedText;
+                link.download = "qr-code-data";
+                link.click();
+            });
+        }
+
+        function onScanError(errorMessage) {
+            console.log("QR Code Scan Error: ", errorMessage);
+        }
+
         function generateQRCode() {
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
@@ -30,31 +48,23 @@
                     const mimeType = file.type;
                     const dataURL = `data:${mimeType};base64,${base64String}`;
                     const qrcodeCanvas = document.getElementById('qrcodeCanvas');
-                    QRCode.toCanvas(qrcodeCanvas, dataURL, function (error) {
-                        if (error) console.error(error);
-                        console.log('QR code generated successfully.');
-                    });
+                    
+                    // データが大きすぎる場合はエラーメッセージを表示
+                    try {
+                        QRCode.toCanvas(qrcodeCanvas, dataURL, function (error) {
+                            if (error) {
+                                console.error(error);
+                                alert('QRコード生成エラー: データが大きすぎます。');
+                            } else {
+                                console.log('QRコードが正常に生成されました。');
+                            }
+                        });
+                    } catch (error) {
+                        console.error('QRコード生成中にエラーが発生しました:', error);
+                    }
                 };
                 reader.readAsArrayBuffer(file);
             }
-        }
-
-        // QRコードスキャナーを初期化する
-        const html5QrCode = new Html5Qrcode("qrcodeCanvas");
-
-        // スキャン成功時の処理
-        function onScanSuccess(decodedText, decodedResult) {
-            document.getElementById("downloadButton").addEventListener("click", function() {
-                const link = document.createElement("a");
-                link.href = decodedText;
-                link.download = "qr-code-data";
-                link.click();
-            });
-        }
-
-        // スキャンエラー処理
-        function onScanError(errorMessage) {
-            console.log("QR Code Scan Error: ", errorMessage);
         }
     </script>
 </body>
