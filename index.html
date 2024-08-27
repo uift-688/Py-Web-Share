@@ -10,7 +10,7 @@
     <input type="file" id="fileInput">
     <button onclick="generateQRCode()">共有</button>
     <button id="downloadButton">ダウンロード</button>
-    <canvas id="qrcodeCanvas" width="250" height="250"></canvas> <!-- widthとheightを追加 -->
+    <canvas id="qrcodeCanvas" width="250" height="250"></canvas>
 
     <!-- QRコードライブラリの読み込み -->
     <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
@@ -32,16 +32,20 @@
                     const mimeType = file.type;
                     const dataURL = `data:${mimeType};base64,${base64String}`;
                     const qrcodeCanvas = document.getElementById('qrcodeCanvas');
-                    
-                    // QRコードの生成
-                    QRCode.toCanvas(qrcodeCanvas, dataURL, function (error) {
-                        if (error) {
-                            console.error(error);
-                            alert('QRコード生成エラー: データが大きすぎます。');
-                        } else {
-                            console.log('QRコードが正常に生成されました。');
-                        }
-                    });
+
+                    if (qrcodeCanvas && qrcodeCanvas.getContext) {
+                        // QRコードの生成
+                        QRCode.toCanvas(qrcodeCanvas, dataURL, function (error) {
+                            if (error) {
+                                console.error(error);
+                                alert('QRコード生成エラー: データが大きすぎます。');
+                            } else {
+                                console.log('QRコードが正常に生成されました。');
+                            }
+                        });
+                    } else {
+                        console.error('QRコード生成エラー: <canvas>要素が見つからないか、無効です。');
+                    }
                 };
                 reader.readAsArrayBuffer(file);
             }
