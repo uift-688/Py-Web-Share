@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Share</title>
+</head>
+<body>
+    <h1>QR Share</h1>
+    <button onclick=`html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess, onScanError);`>スキャン&ダウンロード</button>
+    <canvas id="qrcodeCanvas"></canvas>
+    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
+    <input type="file" id="fileInput">
+    <button onclick="qr()">共有</button>
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+    const file = event.target.files[0]; // 選択されたファイルを取得
+    if (file) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            // Base64エンコードされたデータURLを取得
+            const base64String = btoa(
+                new Uint8Array(e.target.result)
+                    .reduce((data, byte) => data + String.fromCharCode(byte), '')
+            );
+            const mimeType = file.type; // ファイルのMIMEタイプ
+            const dataURL = `data:${mimeType};base64,${base64String}`;
+            
+            // データURLをimg要素に設定
+            qr(dataURL);
+        };
+
+        reader.readAsArrayBuffer(file); // ファイルをArrayBufferとして読み込む
+    }
+});
+
+// QRコードスキャナーを初期化する
+const html5QrCode = new Html5Qrcode("reader");
+
+// スキャン開始
+function onScanSuccess(decodedText, decodedResult) {
+
+    // データURLをダウンロードする
+    document.getElementById("downloadButton").addEventListener("click", function() {
+        const link = document.createElement("a");
+        link.href = decodedText;
+        link.download = "qr-code-data";
+        link.click();
+    });
+}
+
+// スキャンエラー処理
+function onScanError(errorMessage) {
+    console.log("QR Code Scan Error: ", errorMessage);
+}
+
+    </script>
+</body>
+</html>
