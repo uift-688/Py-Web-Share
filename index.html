@@ -7,8 +7,6 @@
 </head>
 <body>
     <h1>QR Share</h1>
-    <button onclick="startScanner()">スキャン&ダウンロード</button>
-    <canvas id="qrcodeCanvas"></canvas>
     <input type="file" id="fileInput">
     <button onclick="generateQRCode()">共有</button>
     <button id="downloadButton">ダウンロード</button>
@@ -16,52 +14,33 @@
     <!-- QRコードライブラリの読み込み -->
     <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
     <script>
-        function startScanner() {
-            const html5QrCode = new Html5Qrcode("qrcodeCanvas");
-            html5QrCode.start({ facingMode: 'environment' }, { fps: 10, qrbox: 250 }, onScanSuccess, onScanError);
-        }
-
-        function onScanSuccess(decodedText, decodedResult) {
-            document.getElementById("downloadButton").addEventListener("click", function() {
-                const link = document.createElement("a");
-                link.href = decodedText;
-                link.download = "qr-code-data";
-                link.click();
-            });
-        }
-
-        function onScanError(errorMessage) {
-            console.log("QR Code Scan Error: ", errorMessage);
-        }
-
         function generateQRCode() {
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
+                    // データのGzip圧縮
+                    const compressedData = pako.gzip(new Uint8Array(e.target.result));
                     const base64String = btoa(
-                        new Uint8Array(e.target.result)
+                        new Uint8Array(compressedData)
                             .reduce((data, byte) => data + String.fromCharCode(byte), '')
                     );
                     const mimeType = file.type;
                     const dataURL = `data:${mimeType};base64,${base64String}`;
                     const qrcodeCanvas = document.getElementById('qrcodeCanvas');
                     
-                    // データが大きすぎる場合はエラーメッセージを表示
-                    try {
-                        QRCode.toCanvas(qrcodeCanvas, dataURL, function (error) {
-                            if (error) {
-                                console.error(error);
-                                alert('QRコード生成エラー: データが大きすぎます。');
-                            } else {
-                                console.log('QRコードが正常に生成されました。');
-                            }
-                        });
-                    } catch (error) {
-                        console.error('QRコード生成中にエラーが発生しました:', error);
-                    }
+                    // QRコードの生成
+                    QRCode.toCanvas(qrcodeCanvas, dataURL, function (error) {
+                        if (error) {
+                            console.error(error);
+                            alert('QRコード生成エラー: データが大きすぎます。');
+                        } else {
+                            console.log('QRコードが正常に生成されました。');
+                        }
+                    });
                 };
                 reader.readAsArrayBuffer(file);
             }
